@@ -1,0 +1,43 @@
+name: Test MLOps Pipeline (DVC + DAGsHub)
+
+on:
+  push:
+    branches: [ main ]
+  workflow_dispatch:
+
+jobs:
+  train:
+    runs-on: ubuntu-latest
+
+    env:
+      AWS_ACCESS_KEY_ID: b.manmadharao207
+      AWS_SECRET_ACCESS_KEY: c3c8546a06461326870a6557917cf6ac27848641
+      AWS_DEFAULT_REGION: us-east-1
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.10"
+
+      - name: Install dependencies
+        run: |
+          pip install --upgrade pip
+          pip install dvc[s3] mlflow -r requirements.txt
+
+      - name: Verify DVC Remote
+        run: |
+          dvc remote list
+          dvc remote default
+
+      - name: DVC Pull
+        run: dvc pull -v
+
+      - name: Run DVC Pipeline
+        run: dvc repro
+
+      - name: DVC Push
+        run: dvc push
