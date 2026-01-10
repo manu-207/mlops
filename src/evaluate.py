@@ -3,9 +3,18 @@ import pickle
 from sklearn.metrics import accuracy_score
 import yaml
 import mlflow
+import os
 
 # ================= Load Params =================
 params = yaml.safe_load(open("params.yaml"))["train"]
+
+# ================= MLflow Config (ENV BASED) =================
+MLFLOW_TRACKING_URI = os.getenv("MLFLOW_TRACKING_URI")
+MLFLOW_EXPERIMENT_NAME = os.getenv("MLFLOW_EXPERIMENT_NAME", "manu7-mlops")
+
+mlflow.set_tracking_uri(MLFLOW_TRACKING_URI)
+mlflow.set_experiment(MLFLOW_EXPERIMENT_NAME)
+
 
 def evaluate(data_path, target, model_path):
 
@@ -19,12 +28,9 @@ def evaluate(data_path, target, model_path):
     X = data.drop(columns=[target])
     y = data[target]
 
-    # ===== MLflow EC2 Config =====
-    mlflow.set_tracking_uri("http://13.233.85.40:5000")
-    mlflow.set_experiment("manu7-mlops")
-
     # Load model (tracked by DVC locally)
-    model = pickle.load(open(model_path, "rb"))
+    with open(model_path, "rb") as f:
+        model = pickle.load(f)
 
     with mlflow.start_run(run_name="evaluation"):
 
@@ -34,6 +40,7 @@ def evaluate(data_path, target, model_path):
         mlflow.log_metric("evaluation_accuracy", accuracy)
 
         print(f"Model accuracy: {accuracy}")
+
 
 if __name__ == "__main__":
     evaluate(

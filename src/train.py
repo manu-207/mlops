@@ -12,6 +12,13 @@ import mlflow.sklearn
 # ================= Load Params =================
 params = yaml.safe_load(open("params.yaml"))["train"]
 
+# ================= MLflow Config (ENV BASED) =================
+MLFLOW_TRACKING_URI = os.getenv("MLFLOW_TRACKING_URI")
+MLFLOW_EXPERIMENT_NAME = os.getenv("MLFLOW_EXPERIMENT_NAME", "manu7-mlops")
+
+mlflow.set_tracking_uri(MLFLOW_TRACKING_URI)
+mlflow.set_experiment(MLFLOW_EXPERIMENT_NAME)
+
 # ================= Hyperparameter Tuning =================
 def hyperparameter_tuning(X_train, y_train, param_grid):
     rf = RandomForestClassifier(random_state=42)
@@ -38,11 +45,7 @@ def train(data_path, target, model_path, random_state, n_estimators, max_depth):
     X = data.drop(columns=[target])
     y = data[target]
 
-    # ===== MLflow EC2 Config =====
-    mlflow.set_tracking_uri("http://13.233.85.40:5000")
-    mlflow.set_experiment("manu7-mlops")
-
-    with mlflow.start_run():
+    with mlflow.start_run(run_name="training"):
 
         # Log base params
         mlflow.log_param("random_state", random_state)
@@ -68,9 +71,6 @@ def train(data_path, target, model_path, random_state, n_estimators, max_depth):
         y_pred = best_model.predict(X_test)
         accuracy = accuracy_score(y_test, y_pred)
 
-        print(f"Accuracy: {accuracy}")
-
-        # ===== MLflow Logging =====
         mlflow.log_metric("accuracy", accuracy)
 
         for k, v in grid_search.best_params_.items():
@@ -93,7 +93,7 @@ def train(data_path, target, model_path, random_state, n_estimators, max_depth):
             registered_model_name="manu7-rf-model"
         )
 
-        # ===== Save Model for DVC =====
+        # Save model for DVC
         os.makedirs(os.path.dirname(model_path), exist_ok=True)
         with open(model_path, "wb") as f:
             pickle.dump(best_model, f)
