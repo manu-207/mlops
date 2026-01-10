@@ -12,7 +12,7 @@ import mlflow.sklearn
 # ================= Load Params =================
 params = yaml.safe_load(open("params.yaml"))["train"]
 
-# ================= MLflow Config (ENV BASED) =================
+# ================= MLflow Config  =================
 MLFLOW_TRACKING_URI = os.getenv("MLFLOW_TRACKING_URI")
 MLFLOW_EXPERIMENT_NAME = os.getenv("MLFLOW_EXPERIMENT_NAME", "manu7-mlops")
 
