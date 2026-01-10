@@ -39,7 +39,7 @@ def train(data_path, target, model_path, random_state, n_estimators, max_depth):
     y = data[target]
 
     # ===== MLflow EC2 Config =====
-    mlflow.set_tracking_uri("http://13.232.221.131:5000")
+    mlflow.set_tracking_uri("http://13.233.85.40:5000")
     mlflow.set_experiment("manu7-mlops")
 
     with mlflow.start_run():
