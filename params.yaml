@@ -3,9 +3,9 @@ preprocess:
   output: data/processed/data.csv
 
 train:
-  data: data/raw/data.csv
+  data: data/processed/data.csv
+  target: Outcome
   model: models/model.pkl
   random_state: 42
   n_estimators: 100
   max_depth: 5
-  
