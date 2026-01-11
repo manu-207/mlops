@@ -3,3 +3,7 @@ dagshub
 scikit-learn
 mlflow
 dvc-s3
+flask
+pandas
+boto3
+gunicorn
