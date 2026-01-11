@@ -17,17 +17,18 @@ MODEL_NAME = os.getenv(
     "manu7-rf-model"
 )
 
-MODEL_STAGE = os.getenv(
-    "MODEL_STAGE",
-    "Production"
+MODEL_ALIAS = os.getenv(
+    "MODEL_ALIAS",
+    "prod"   # alias, NOT stage
 )
 
 mlflow.set_tracking_uri(MLFLOW_TRACKING_URI)
 
-# Load model from MLflow Registry
-model_uri = f"models:/{MODEL_NAME}/{MODEL_STAGE}"
+# ✅ Load model using ALIAS
+model_uri = f"models:/{MODEL_NAME}@{MODEL_ALIAS}"
 model = mlflow.sklearn.load_model(model_uri)
 
+# ================= Routes =================
 @app.route("/health", methods=["GET"])
 def health():
     return jsonify({"status": "UP"}), 200
