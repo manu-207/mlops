@@ -1,14 +1,12 @@
 import os
-import pickle
 import yaml
+import pickle
 import pandas as pd
 import mlflow
 
 from sklearn.metrics import accuracy_score
-
 from evidently.report import Report
 from evidently.metric_preset import DataDriftPreset
-
 
 # ================= Load Params =================
 params = yaml.safe_load(open("params.yaml"))["train"]
@@ -20,71 +18,52 @@ REPORT_PATH = "reports/evidently_data_drift.html"
 TARGET = params["target"]
 MODEL_PATH = params["model"]
 
-
 # ================= MLflow Config =================
-MLFLOW_TRACKING_URI = os.getenv("MLFLOW_TRACKING_URI")
-MLFLOW_EXPERIMENT_NAME = os.getenv("MLFLOW_EXPERIMENT_NAME", "manu7-mlops")
-
-mlflow.set_tracking_uri(MLFLOW_TRACKING_URI)
-mlflow.set_experiment(MLFLOW_EXPERIMENT_NAME)
-
+mlflow.set_tracking_uri(os.getenv("MLFLOW_TRACKING_URI"))
+mlflow.set_experiment(os.getenv("MLFLOW_EXPERIMENT_NAME", "manu7-mlops"))
 
 def evaluate():
 
-    # ---------- Load Data ----------
     reference_data = pd.read_csv(REFERENCE_DATA_PATH)
     current_data = pd.read_csv(CURRENT_DATA_PATH)
 
-    # ---------- Validate Target ----------
-    if TARGET not in reference_data.columns:
-        raise ValueError(f"Target column '{TARGET}' not found in reference data")
+    # ---------- Validate ----------
+    if TARGET not in reference_data.columns or TARGET not in current_data.columns:
+        raise ValueError("Target column missing in datasets")
 
-    if TARGET not in current_data.columns:
-        raise ValueError(f"Target column '{TARGET}' not found in current data")
+    X_ref = reference_data.drop(columns=[TARGET])
+    X_cur = current_data.drop(columns=[TARGET])
+    y_cur = current_data[TARGET]
 
-    # ---------- Split Features & Target ----------
-    X_reference = reference_data.drop(columns=[TARGET])
-    X_current = current_data.drop(columns=[TARGET])
-
-    y_current = current_data[TARGET]
-
-    # ---------- Validate Feature Consistency ----------
-    if list(X_reference.columns) != list(X_current.columns):
-        raise ValueError("Feature columns mismatch between reference and current data")
+    if list(X_ref.columns) != list(X_cur.columns):
+        raise ValueError("Feature mismatch between reference & current data")
 
     # ---------- Load Model ----------
     with open(MODEL_PATH, "rb") as f:
         model = pickle.load(f)
 
-    # ---------- MLflow Evaluation ----------
     with mlflow.start_run(run_name="evaluation"):
 
-        predictions = model.predict(X_current)
-        accuracy = accuracy_score(y_current, predictions)
+        preds = model.predict(X_cur)
+        acc = accuracy_score(y_cur, preds)
 
-        mlflow.log_metric("evaluation_accuracy", accuracy)
-        print(f"Model accuracy: {accuracy}")
+        mlflow.log_metric("evaluation_accuracy", acc)
+        print(f"✅ Evaluation Accuracy: {acc}")
 
-        # ---------- Evidently Data Drift (FEATURES ONLY) ----------
-        report = Report(
-            metrics=[
-                DataDriftPreset()
-            ]
-        )
-
+        # ---------- Evidently Drift Report ----------
+        report = Report(metrics=[DataDriftPreset()])
         report.run(
-            reference_data=X_reference,
-            current_data=X_current
+            reference_data=X_ref,
+            current_data=X_cur
         )
 
         os.makedirs("reports", exist_ok=True)
         report.save_html(REPORT_PATH)
 
-        # Log Evidently report to MLflow
+        # 🔥 This makes it open inside MLflow UI
         mlflow.log_artifact(REPORT_PATH)
 
-        print(f"Evidently report saved at: {REPORT_PATH}")
-
+        print("✅ Evidently report logged to MLflow")
 
 if __name__ == "__main__":
     evaluate()
