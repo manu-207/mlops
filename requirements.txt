@@ -7,5 +7,5 @@ flask
 pandas
 boto3
 gunicorn
-evidently
+evidently==0.3.2
 pyyaml
