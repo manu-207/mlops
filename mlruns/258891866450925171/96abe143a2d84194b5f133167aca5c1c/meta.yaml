@@ -1,0 +1,14 @@
+artifact_uri: file:///C:/Users/bmanm/OneDrive/Desktop/manu7-mlops/mlops/mlruns/258891866450925171/96abe143a2d84194b5f133167aca5c1c/artifacts
+end_time: 1769957220112
+entry_point_name: ''
+experiment_id: '258891866450925171'
+lifecycle_stage: active
+run_id: 96abe143a2d84194b5f133167aca5c1c
+run_name: training
+source_name: ''
+source_type: 4
+source_version: ''
+start_time: 1769957190898
+status: 3
+tags: []
+user_id: bmanm

@@ -1,0 +1,10 @@
+artifact_location: file:///C:/Users/bmanm/OneDrive/Desktop/manu7-mlops/mlops/mlruns/258891866450925171/models/m-285e01ae038f43fe8f79e2a7b7d15c7c/artifacts
+creation_timestamp: 1769957200535
+experiment_id: '258891866450925171'
+last_updated_timestamp: 1769957219854
+model_id: m-285e01ae038f43fe8f79e2a7b7d15c7c
+model_type: null
+name: model
+source_run_id: 96abe143a2d84194b5f133167aca5c1c
+status: 2
+status_message: null
