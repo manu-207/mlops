@@ -29,7 +29,7 @@ jobs:
         uses: actions/checkout@v4
 
       # -----------------------------
-      # 2. Configure AWS credentials (MUST BE FIRST)
+      # 2. Configure AWS credentials
       # -----------------------------
       - name: Configure AWS credentials
         uses: aws-actions/configure-aws-credentials@v4
@@ -39,7 +39,7 @@ jobs:
           aws-region: ${{ env.AWS_REGION }}
 
       # -----------------------------
-      # 3. Verify AWS identity (optional but recommended)
+      # 3. Verify AWS identity
       # -----------------------------
       - name: Verify AWS identity
         run: aws sts get-caller-identity
@@ -53,36 +53,44 @@ jobs:
           python-version: "3.10"
 
       # -----------------------------
-      # 5. Install dependencies
+      # 5. Install dependencies (PINNED)
       # -----------------------------
       - name: Install dependencies
         run: |
           python -m pip install --upgrade pip
-          pip install -r requirements.txt
-          pip install dvc[s3] mlflow
+          pip install --no-cache-dir -r requirements.txt
 
       # -----------------------------
-      # 6. Pull data from DVC (S3)
+      # 6. Debug versions (optional but recommended)
+      # -----------------------------
+      - name: Debug dependency versions
+        run: |
+          pip show dvc
+          pip show pathspec
+          pip show evidently
+
+      # -----------------------------
+      # 7. Pull data from DVC (S3)
       # -----------------------------
       - name: Pull data from DVC
         run: dvc pull
 
       # -----------------------------
-      # 7. Train & Register Model (MLflow)
+      # 8. Run DVC pipeline (train + evaluate + Evidently)
       # -----------------------------
       - name: Run DVC Pipeline
         run: dvc repro
 
       # -----------------------------
-      # 8. Login to Amazon ECR
+      # 9. Login to Amazon ECR
       # -----------------------------
       - name: Login to Amazon ECR
         uses: aws-actions/amazon-ecr-login@v2
 
       # -----------------------------
-      # 9. Create ECR repository if not exists
+      # 10. Create ECR repository (if not exists)
       # -----------------------------
-      - name: Create ECR repository (if not exists)
+      - name: Create ECR repository
         run: |
           aws ecr describe-repositories \
             --repository-names $ECR_REPOSITORY \
@@ -90,7 +98,7 @@ jobs:
               --repository-name $ECR_REPOSITORY
 
       # -----------------------------
-      # 10. Build Docker image
+      # 11. Build Docker image
       # -----------------------------
       - name: Build Docker image
         run: |
@@ -98,7 +106,7 @@ jobs:
             -t $AWS_ACCOUNT_ID.dkr.ecr.$AWS_REGION.amazonaws.com/$ECR_REPOSITORY:$IMAGE_TAG .
 
       # -----------------------------
-      # 11. Push Docker image to ECR
+      # 12. Push Docker image to ECR
       # -----------------------------
       - name: Push Docker image to ECR
         run: |
