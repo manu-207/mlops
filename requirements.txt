@@ -7,3 +7,5 @@ flask
 pandas
 boto3
 gunicorn
+evidently
+pyyaml
