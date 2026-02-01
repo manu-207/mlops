@@ -4,8 +4,14 @@ stages:
     deps:
       - data/raw/data.csv
       - src/preprocess.py
-    params:
-      - preprocess.input
+    outs:
+      - data/processed/data.csv
+
+  split:
+    cmd: python src/split.py
+    deps:
+      - data/processed/data.csv
+      - src/split.py
     outs:
       - data/processed/reference.csv
       - data/processed/current.csv
@@ -15,23 +21,20 @@ stages:
     deps:
       - data/processed/reference.csv
       - src/train.py
-    params:
-      - train.data
-      - train.target
-      - train.random_state
-      - train.n_estimators
-      - train.max_depth
-      - train.model
     outs:
       - models/model.pkl
 
   evaluate:
     cmd: python src/evaluate.py
     deps:
-      - data/processed/reference.csv
       - data/processed/current.csv
       - models/model.pkl
       - src/evaluate.py
-    outs:
-      - reports/evidently_data_drift.html:
-          cache: false
+
+  monitor:
+    cmd: python src/monitoring.py
+    deps:
+      - data/processed/reference.csv
+      - data/processed/current.csv
+      - models/model.pkl
+      - src/monitoring.py
