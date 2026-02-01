@@ -1,47 +1,34 @@
-import pandas as pd
-import pickle
-import yaml
-import mlflow
 import os
+import pickle
+import pandas as pd
+import mlflow
 
 from evidently.report import Report
 from evidently.metric_preset import DataDriftPreset, ClassificationPreset
 
-# ================= Load Params =================
-params = yaml.safe_load(open("params.yaml"))["monitor"]
-train_params = yaml.safe_load(open("params.yaml"))["train"]
+REFERENCE_DATA_PATH = "data/processed/reference.csv"
+CURRENT_DATA_PATH = "data/processed/current.csv"
+MODEL_PATH = "models/model.pkl"
+TARGET = "Outcome"
 
 # ================= MLflow Config =================
-MLFLOW_TRACKING_URI = os.getenv("MLFLOW_TRACKING_URI")
-MLFLOW_EXPERIMENT_NAME = os.getenv("MLFLOW_EXPERIMENT_NAME", "manu7-mlops")
-
-mlflow.set_tracking_uri(MLFLOW_TRACKING_URI)
-mlflow.set_experiment(MLFLOW_EXPERIMENT_NAME)
+mlflow.set_tracking_uri(os.getenv("MLFLOW_TRACKING_URI"))
+mlflow.set_experiment(os.getenv("MLFLOW_EXPERIMENT_NAME", "manu7-mlops"))
 
 
-def monitor(reference_path, current_path, model_path, target):
+def monitor():
 
-    reference = pd.read_csv(reference_path)
-    current = pd.read_csv(current_path)
+    reference = pd.read_csv(REFERENCE_DATA_PATH)
+    current = pd.read_csv(CURRENT_DATA_PATH)
 
-    # Load trained model
-    with open(model_path, "rb") as f:
+    with open(MODEL_PATH, "rb") as f:
         model = pickle.load(f)
 
-    # Split features & target
-    X_ref = reference.drop(columns=[target])
-    y_ref = reference[target]
-
-    X_cur = current.drop(columns=[target])
-    y_cur = current[target]
-
-    # Predictions
-    reference["prediction"] = model.predict(X_ref)
-    current["prediction"] = model.predict(X_cur)
+    reference["prediction"] = model.predict(reference.drop(columns=[TARGET]))
+    current["prediction"] = model.predict(current.drop(columns=[TARGET]))
 
     with mlflow.start_run(run_name="monitoring"):
 
-        # ================= Evidently Report =================
         report = Report(
             metrics=[
                 DataDriftPreset(),
@@ -49,26 +36,16 @@ def monitor(reference_path, current_path, model_path, target):
             ]
         )
 
-        report.run(
-            reference_data=reference,
-            current_data=current
-        )
+        report.run(reference_data=reference, current_data=current)
 
         os.makedirs("reports", exist_ok=True)
         report_path = "reports/evidently_report.html"
         report.save_html(report_path)
 
-        # ================= Log to MLflow =================
         mlflow.log_artifact(report_path, artifact_path="evidently")
 
-        print("✅ Evidently monitoring report generated and logged to MLflow")
+        print("✅ Evidently monitoring report logged to MLflow")
 
 
-# ================= Run =================
 if __name__ == "__main__":
-    monitor(
-        params["reference_data"],
-        params["current_data"],
-        train_params["model"],
-        train_params["target"]
-    )
+    monitor()

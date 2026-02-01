@@ -14,7 +14,6 @@ stages:
       - src/split.py
     outs:
       - data/processed/reference.csv
-      - data/processed/current.csv
 
   train:
     cmd: python src/train.py
@@ -27,7 +26,7 @@ stages:
   evaluate:
     cmd: python src/evaluate.py
     deps:
-      - data/processed/current.csv
+      - data/processed/reference.csv
       - models/model.pkl
       - src/evaluate.py
 
@@ -35,6 +34,5 @@ stages:
     cmd: python src/monitoring.py
     deps:
       - data/processed/reference.csv
-      - data/processed/current.csv
       - models/model.pkl
       - src/monitoring.py
