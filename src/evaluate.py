@@ -1,8 +1,8 @@
-import pandas as pd
+import os
 import pickle
 import yaml
+import pandas as pd
 import mlflow
-import os
 
 from sklearn.metrics import accuracy_score
 
@@ -35,6 +35,7 @@ def evaluate():
     reference_data = pd.read_csv(REFERENCE_DATA_PATH)
     current_data = pd.read_csv(CURRENT_DATA_PATH)
 
+    # ---------- Validate Target ----------
     if TARGET not in reference_data.columns:
         raise ValueError(f"Target column '{TARGET}' not found in reference data")
 
@@ -42,8 +43,14 @@ def evaluate():
         raise ValueError(f"Target column '{TARGET}' not found in current data")
 
     # ---------- Split Features & Target ----------
+    X_reference = reference_data.drop(columns=[TARGET])
     X_current = current_data.drop(columns=[TARGET])
+
     y_current = current_data[TARGET]
+
+    # ---------- Validate Feature Consistency ----------
+    if list(X_reference.columns) != list(X_current.columns):
+        raise ValueError("Feature columns mismatch between reference and current data")
 
     # ---------- Load Model ----------
     with open(MODEL_PATH, "rb") as f:
@@ -56,10 +63,9 @@ def evaluate():
         accuracy = accuracy_score(y_current, predictions)
 
         mlflow.log_metric("evaluation_accuracy", accuracy)
-
         print(f"Model accuracy: {accuracy}")
 
-        # ---------- Evidently Data Drift ----------
+        # ---------- Evidently Data Drift (FEATURES ONLY) ----------
         report = Report(
             metrics=[
                 DataDriftPreset()
@@ -67,8 +73,8 @@ def evaluate():
         )
 
         report.run(
-            reference_data=reference_data,
-            current_data=current_data
+            reference_data=X_reference,
+            current_data=X_current
         )
 
         os.makedirs("reports", exist_ok=True)
