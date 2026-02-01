@@ -1,4 +1,4 @@
-name: MLOps CI Pipeline (DVC + MLflow + ECR) end to end project with evadient ai
+name: MLOps CI Pipeline (DVC + MLflow + Evidently + ECR)
 
 on:
   push:
@@ -23,13 +23,38 @@ jobs:
 
     steps:
       # -----------------------------
-      # 1. Checkout code
+      # 1. Checkout repository
       # -----------------------------
       - name: Checkout repository
         uses: actions/checkout@v4
+        with:
+          fetch-depth: 0   # REQUIRED for DVC
 
       # -----------------------------
-      # 2. Configure AWS credentials
+      # 2. Setup Python
+      # -----------------------------
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.10"
+
+      # -----------------------------
+      # 3. Install dependencies
+      # -----------------------------
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install --no-cache-dir \
+            dvc[s3] \
+            mlflow \
+            evidently \
+            pandas \
+            scikit-learn \
+            joblib \
+            boto3
+
+      # -----------------------------
+      # 4. Configure AWS credentials
       # -----------------------------
       - name: Configure AWS credentials
         uses: aws-actions/configure-aws-credentials@v4
@@ -39,47 +64,34 @@ jobs:
           aws-region: ${{ env.AWS_REGION }}
 
       # -----------------------------
-      # 3. Verify AWS identity
+      # 5. Verify AWS identity
       # -----------------------------
       - name: Verify AWS identity
         run: aws sts get-caller-identity
 
       # -----------------------------
-      # 4. Setup Python
-      # -----------------------------
-      - name: Setup Python
-        uses: actions/setup-python@v5
-        with:
-          python-version: "3.10"
-
-      # -----------------------------
-      # 5. Install dependencies (PINNED)
-      # -----------------------------
-      - name: Install dependencies
-        run: |
-          python -m pip install --upgrade pip
-          pip install --no-cache-dir -r requirements.txt
-
-      # -----------------------------
-      # 6. Debug versions (optional but recommended)
-      # -----------------------------
-      - name: Debug dependency versions
-        run: |
-          pip show dvc
-          pip show pathspec
-          pip show evidently
-
-      # -----------------------------
-      # 7. Pull data from DVC (S3)
+      # 6. DVC pull (ONLY tracked files)
       # -----------------------------
       - name: Pull data from DVC
-        run: dvc pull
+        run: |
+          dvc pull
+          dvc status
 
       # -----------------------------
-      # 8. Run DVC pipeline (train + evaluate + Evidently)
+      # 7. Run DVC pipeline
+      # (preprocess → train → evaluate)
       # -----------------------------
-      - name: Run DVC Pipeline
+      - name: Run DVC pipeline
         run: dvc repro
+
+      # -----------------------------
+      # 8. Upload Evidently report
+      # -----------------------------
+      - name: Upload Evidently Drift Report
+        uses: actions/upload-artifact@v4
+        with:
+          name: evidently-drift-report
+          path: reports/drift_report.html
 
       # -----------------------------
       # 9. Login to Amazon ECR
