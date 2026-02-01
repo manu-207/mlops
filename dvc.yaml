@@ -6,14 +6,14 @@ stages:
       - src/preprocess.py
     params:
       - preprocess.input
-      - preprocess.output
     outs:
-      - data/processed/data.csv
+      - data/processed/reference.csv
+      - data/processed/current.csv
 
   train:
     cmd: python src/train.py
     deps:
-      - data/processed/data.csv
+      - data/processed/reference.csv
       - src/train.py
     params:
       - train.data
@@ -28,7 +28,6 @@ stages:
   evaluate:
     cmd: python src/evaluate.py
     deps:
-      - data/processed/data.csv
       - data/processed/reference.csv
       - data/processed/current.csv
       - models/model.pkl
