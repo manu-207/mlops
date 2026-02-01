@@ -1,9 +1,10 @@
 preprocess:
   input: data/raw/data.csv
-  output: data/processed/data.csv
+  reference_output: data/processed/reference.csv
+  current_output: data/processed/current.csv
 
 train:
-  data: data/processed/data.csv
+  data: data/processed/reference.csv
   target: Outcome
   model: models/model.pkl
   random_state: 42
