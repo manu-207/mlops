@@ -34,4 +34,5 @@ stages:
       - models/model.pkl
       - src/evaluate.py
     outs:
-      - reports/evidently_data_drift.html
+      - reports/evidently_data_drift.html:
+          cache: false
