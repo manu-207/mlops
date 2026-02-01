@@ -2,29 +2,36 @@ stages:
   preprocess:
     cmd: python src/preprocess.py
     deps:
-    - data/raw/data.csv
-    - src/preprocess.py
+      - data/raw/data.csv
+      - src/preprocess.py
     params:
-    - preprocess.input
-    - preprocess.output
+      - preprocess.input
+      - preprocess.output
     outs:
-    - data/processed/data.csv
+      - data/processed/data.csv
+
   train:
     cmd: python src/train.py
     deps:
-    - data/raw/data.csv
-    - src/train.py
+      - data/processed/data.csv
+      - src/train.py
     params:
-    - train.data
-    - train.max_depth
-    - train.model
-    - train.n_estimators
-    - train.random_state
+      - train.data
+      - train.target
+      - train.random_state
+      - train.n_estimators
+      - train.max_depth
+      - train.model
     outs:
-    - models/model.pkl
+      - models/model.pkl
+
   evaluate:
     cmd: python src/evaluate.py
     deps:
-    - data/raw/data.csv
-    - models/model.pkl
-    - src/evaluate.py
+      - data/processed/data.csv
+      - data/processed/reference.csv
+      - data/processed/current.csv
+      - models/model.pkl
+      - src/evaluate.py
+    outs:
+      - reports/evidently_data_drift.html
