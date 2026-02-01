@@ -28,10 +28,17 @@ mlflow.set_tracking_uri(MLFLOW_TRACKING_URI)
 model_uri = f"models:/{MODEL_NAME}@{MODEL_ALIAS}"
 model = mlflow.sklearn.load_model(model_uri)
 
+# ================= Evidently Data Path =================
+EVIDENTLY_DATA_PATH = "/opt/evidently/data"
+CURRENT_DATA_FILE = f"{EVIDENTLY_DATA_PATH}/current.csv"
+
+os.makedirs(EVIDENTLY_DATA_PATH, exist_ok=True)
+
 # ================= Routes =================
 @app.route("/health", methods=["GET"])
 def health():
     return jsonify({"status": "UP"}), 200
+
 
 @app.route("/predict", methods=["POST"])
 def predict():
@@ -41,12 +48,22 @@ def predict():
 
         predictions = model.predict(df)
 
+        # 🔥 LOG PRODUCTION DATA FOR EVIDENTLY
+        df["prediction"] = predictions
+        df.to_csv(
+            CURRENT_DATA_FILE,
+            mode="a",
+            header=not os.path.exists(CURRENT_DATA_FILE),
+            index=False
+        )
+
         return jsonify({
             "predictions": predictions.tolist()
         })
 
     except Exception as e:
         return jsonify({"error": str(e)}), 500
+
 
 if __name__ == "__main__":
     app.run(host="0.0.0.0", port=8080)
