@@ -2,7 +2,6 @@ import pandas as pd
 import yaml
 import os
 
-# ================= Load Params =================
 params = yaml.safe_load(open("params.yaml"))["preprocess"]
 
 COLUMN_NAMES = [
@@ -17,18 +16,25 @@ COLUMN_NAMES = [
     "Outcome"
 ]
 
-def preprocess(input_path: str, output_path: str):
-    # Raw CSV has no headers
+REFERENCE_PATH = "data/processed/reference.csv"
+CURRENT_PATH = "data/processed/current.csv"
+
+def preprocess(input_path):
+    # Load raw data
     data = pd.read_csv(input_path, header=None)
     data.columns = COLUMN_NAMES
 
-    os.makedirs(os.path.dirname(output_path), exist_ok=True)
-    data.to_csv(output_path, index=False)
+    os.makedirs("data/processed", exist_ok=True)
 
-    print(f"✅ Preprocessed data saved at: {output_path}")
+    # 🔹 Split data for drift monitoring
+    reference_data = data.sample(frac=0.7, random_state=42)
+    current_data = data.drop(reference_data.index)
+
+    reference_data.to_csv(REFERENCE_PATH, index=False)
+    current_data.to_csv(CURRENT_PATH, index=False)
+
+    print(f"✅ Reference data saved at: {REFERENCE_PATH}")
+    print(f"✅ Current data saved at: {CURRENT_PATH}")
 
 if __name__ == "__main__":
-    preprocess(
-        params["input"],
-        params["output"]
-    )
+    preprocess(params["input"])
