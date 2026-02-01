@@ -1,4 +1,4 @@
-name: MLOps CI Pipeline (DVC + MLflow + ECR) end to end
+name: MLOps CI Pipeline (DVC + MLflow + ECR) end to end project
 
 on:
   push:
